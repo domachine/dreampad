@@ -3,12 +3,6 @@ var marked = require('marked');
 var StateStore = require('../stores/state_store');
 var Actions = require('../actions');
 
-function getState() {
-  return {
-    mode: StateStore.getState().mode
-  };
-}
-
 var Tab = React.createClass({
   render: function() {
     var cl = this.props.active ? 'active' : '';
@@ -22,17 +16,21 @@ var Tab = React.createClass({
 
 module.exports = React.createClass({
   getInitialState: function() {
-    var state = getState();
-    state.caretPosition = (this.state || {}).caretPosition;
+    var state = {
+      caretPosition: 0,
+      mode: this.props.initialMode || 'edit',
+      isLoading: StateStore.getState().isLoading
+    };
     return state;
   },
 
   componentDidMount: function() {
+    window.addEventListener('keyup', this._onKeyUp);
     StateStore.addChangeListener(this._onChange);
-    if (this.state.mode === 'edit') { this._focusTextArea(); }
   },
 
   componentWillUnmount: function() {
+    window.removeEventListener('keyup', this._onKeyUp);
     StateStore.removeChangeListener(this._onChange);
   },
 
@@ -40,20 +38,36 @@ module.exports = React.createClass({
     React.findDOMNode(this.refs.textarea).focus();
   },
 
-  _onChange: function() {
+  _changeMode: function(mode) {
     var self = this;
-    var state = getState();
     if (this.state.mode === 'edit') {
-      state.caretPosition = React.findDOMNode(this.refs.textarea).selectionStart;
-    } else {
-      state.caretPosition = this.state.caretPosition;
+      this.state.caretPosition = React.findDOMNode(this.refs.textarea).selectionStart;
     }
-    this.setState(state, function() {
-      if (state.mode === 'edit') {
+    this.state.mode = mode;
+    this.setState(this.state, function() {
+      if (self.state.mode === 'edit') {
         self._focusTextArea();
-        React.findDOMNode(self.refs.textarea).selectionStart = state.caretPosition;
+        React.findDOMNode(self.refs.textarea).selectionStart = self.state.caretPosition;
       }
     });
+  },
+
+  _onChange: function() {
+    this.setState({ isLoading: StateStore.getState().isLoading });
+  },
+
+  _onKeyUp: function(e) {
+    // Right - 39
+    // Left - 37
+    var mode = this.state.mode;
+
+    if (!e.ctrlKey) { return; }
+    if (e.keyCode === 32) {
+      this._changeMode(mode === 'edit' ? 'preview' : 'edit');
+    }
+    if (e.keyCode === 13) {
+      this.props.onSave();
+    }
   },
 
   _onTextChange: function(key, e) {
@@ -62,12 +76,12 @@ module.exports = React.createClass({
 
   _onEditMode: function(e) {
     e.preventDefault();
-    this.setState({ mode: 'edit' });
+    this._changeMode('edit');
   },
 
   _onPreviewMode: function(e) {
     e.preventDefault();
-    this.setState({ mode: 'preview' });
+    this._changeMode('preview');
   },
 
   renderBody: function() {
@@ -75,12 +89,14 @@ module.exports = React.createClass({
       return (
         <div>
           <input className='form-control' placeholder='Name'
-            value={this.props.document.name}
-            onChange={this._onTextChange.bind(this, 'name')} />
+            value={this.props.document._id || ''}
+            onChange={this._onTextChange.bind(this, '_id')}
+            disabled={this.state.isLoading} />
           <br />
           <textarea ref='textarea' className='form-control' rows='20'
-            value={this.props.document.content}
-            onChange={this._onTextChange.bind(this, 'content')} />
+            value={this.props.document.content || ''}
+            onChange={this._onTextChange.bind(this, 'content')}
+            disabled={this.state.isLoading} />
         </div>
       );
     } else {

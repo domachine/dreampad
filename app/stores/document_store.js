@@ -2,7 +2,7 @@ var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
 
 function StateStore() {
-  this._state = { isLoading: false };
+  this._document = {};
 }
 inherits(StateStore, EventEmitter);
 
@@ -18,24 +18,23 @@ StateStore.prototype.emitChange = function() {
   this.emit('change');
 };
 
-StateStore.prototype.getState = function() {
-  return this._state;
+StateStore.prototype.getDocument = function() {
+  return this._document;
 };
 
-StateStore.prototype._updateState = function(state) {
-  'use strict';
-
-  for (var key in state) {
-    let value = state[key];
-    if (!state.hasOwnProperty(key)) { continue; }
-    this._state[key] = value;
-  }
+StateStore.prototype._loadDocument = function(document) {
+  this._document = document;
   this.emitChange();
 };
 
 var store = module.exports = new StateStore();
 store.dispatchToken = Dispatcher.register(function(action) {
   switch (action.type) {
-    case 'UPDATE_STATE': store._updateState(action.state); break;
+    case 'UPDATE_DOCUMENT':
+      if (action._id === store._document._id) {
+        store._updateDocument(action.id, action.document);
+      }
+      break;
+    case 'LOAD_DOCUMENT': store._loadDocument(action.document); break;
   }
 });

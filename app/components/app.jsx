@@ -1,29 +1,41 @@
+var Router = require('react-router')
+
 var Actions = require('../actions');
 var StateStore = require('../stores/state_store');
 
-var RouteHandler = require('react-router').RouteHandler;
+var RouteHandler = Router.RouteHandler;
+var Link = Router.Link;
+
+function getState() {
+  return {
+    isLoading: StateStore.getState().isLoading || false,
+  };
+}
 
 module.exports = React.createClass({
-  componentDidMount: function() {
-    window.addEventListener('keyup', this._onKeyUp);
+  getInitialState: function() {
+    var state = getState();
+    state.isLoading = true;
+    return state;
   },
 
-  _onKeyUp: function(e) {
-    // Right - 39
-    // Left - 37
-    var mode = StateStore.getState().mode;
+  componentDidMount: function() {
+    StateStore.addChangeListener(this._onChange);
+  },
 
-    if (!e.ctrlKey) { return; }
-    if (e.keyCode === 32) {
-      Actions.updateState({ mode: mode === 'edit' ? 'preview' : 'edit' });
-    }
+  componentWillUnmount: function() {
+    StateStore.removeChangeListener(this._onChange);
+  },
+
+  _onChange: function() {
+    this.setState(getState());
   },
 
   render: function() {
     return (
       <div>
         <nav className="navbar navbar-default">
-          <div className="container-fluid">
+          <div className="container">
             <div className="navbar-header">
               <button type="button" className="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
                 <span className="sr-only">Toggle navigation</span>
@@ -36,38 +48,24 @@ module.exports = React.createClass({
 
             <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
               <ul className="nav navbar-nav">
-                <li className="active"><a href="#">Link <span className="sr-only">(current)</span></a></li>
-                <li><a href="#">Link</a></li>
-                <li className="dropdown">
-                  <a href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span className="caret"></span></a>
-                  <ul className="dropdown-menu" role="menu">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li className="divider"></li>
-                    <li><a href="#">Separated link</a></li>
-                    <li className="divider"></li>
-                    <li><a href="#">One more separated link</a></li>
-                  </ul>
+                <li>
+                  <Link to='documents'>
+                    Documents
+                  </Link>
                 </li>
-              </ul>
-              <form className="navbar-form navbar-left" role="search">
-                <div className="form-group">
-                  <input type="text" className="form-control" placeholder="Search" />
-                </div>
-                <button type="submit" className="btn btn-default">Submit</button>
-              </form>
-              <ul className="nav navbar-nav navbar-right">
-                <li><a href="#">Link</a></li>
-                <li className="dropdown">
-                  <a href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span className="caret"></span></a>
-                  <ul className="dropdown-menu" role="menu">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li className="divider"></li>
-                    <li><a href="#">Separated link</a></li>
-                  </ul>
+                <li>
+                  <Link to='new_document'>
+                    <span className='fa fa-plus' />
+                    &nbsp;
+                    New document
+                  </Link>
+                </li>
+                <li>
+                  <a href='#'>
+                    {this.state.isLoading
+                      ? <span className='fa fa-spinner fa-spin' />
+                      : null}
+                  </a>
                 </li>
               </ul>
             </div>
