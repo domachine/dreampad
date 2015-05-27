@@ -4,6 +4,10 @@ function loading(state) {
   exports.updateState({ isLoading: state == null ? true : state });
 }
 
+function saving(state) {
+  exports.updateState({ isSaving: state == null ? true : state });
+}
+
 exports.updateState = function(state) {
   Dispatcher.dispatch({ type: 'UPDATE_STATE', state: state });
 };
@@ -57,13 +61,13 @@ exports.updateDocument = function(values) {
     let value = values[key];
     doc[key] = value;
   }
-  loading();
+  saving();
   db.put(doc)
     .then(function(res) {
       doc._rev = res.rev;
       Dispatcher.dispatch({ type: 'UPDATE_DOCUMENT', document: doc });
-      loading(false);
+      saving(false);
     }).catch(function() {
-      loading(false);
+      saving(false);
     });
 };

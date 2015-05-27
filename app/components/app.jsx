@@ -9,13 +9,13 @@ var Link = Router.Link;
 function getState() {
   return {
     isLoading: StateStore.getState().isLoading || false,
+    isSaving: StateStore.getState().isSaving || false,
   };
 }
 
 module.exports = React.createClass({
   getInitialState: function() {
     var state = getState();
-    state.isLoading = true;
     return state;
   },
 
@@ -62,7 +62,7 @@ module.exports = React.createClass({
                 </li>
                 <li>
                   <a href='#'>
-                    {this.state.isLoading
+                    {this.state.isLoading || this.state.isSaving
                       ? <span className='fa fa-spinner fa-spin' />
                       : null}
                   </a>

@@ -46,6 +46,13 @@ module.exports = React.createClass({
   },
 
   render: function() {
+    if (this.state.isLoading) {
+      return (
+        <div style={{paddingTop: '50px', textAlign: 'center', width: '100%'}}>
+          <span className='fa fa-spin fa-refresh fa-5x' />
+        </div>
+      );
+    }
     return (
       <ul className="media-list">
         {this.state.documents.map(this.renderDocument)}
