@@ -1,34 +1,52 @@
 var DocumentStore = require('../stores/document_store');
+var StateStore = require('../stores/state_store');
 var DocumentEditor = require('./document_editor');
 var Actions = require('../actions')
 
 function getState() {
   return {
     document: DocumentStore.getDocument(),
-    replica: Object.create(DocumentStore.getDocument())
+    isLoading: StateStore.getState().isLoading
   };
 }
 
 module.exports = React.createClass({
-  getInitialState: getState,
+  getInitialState: function() {
+    var state = getState();
+    state.replica = Object.create(DocumentStore.getDocument());
+    return state;
+  },
+
+  componentWillMount: function() {
+    Actions.loading();
+  },
 
   componentDidMount: function() {
-    DocumentStore.addChangeListener(this._onChange);
+    DocumentStore.addChangeListener(this._onDocumentChange);
+    StateStore.addChangeListener(this._onChange);
     Actions.loadDocument(this.props.params.id);
   },
 
   componentWillUnmount: function() {
-    DocumentStore.removeChangeListener(this._onChange);
+    DocumentStore.removeChangeListener(this._onDocumentChange);
+    StateStore.removeChangeListener(this._onChange);
   },
 
   componentWillReceiveProps: function(next) {
-    if (this.props.id !== next.id) {
-      Actions.loadDocument(this.props.params.id);
+    if (this.props.params.id !== next.params.id) {
+      Actions.loadDocument(next.params.id);
     }
   },
 
   _onChange: function() {
     this.setState(getState());
+  },
+
+  /**
+   * Seperate change handler for the document to avoid content flickering.
+   */
+  _onDocumentChange: function() {
+    this.setState({ replica: Object.create(DocumentStore.getDocument()) });
   },
 
   _onFormChange: function(key, value) {
@@ -44,8 +62,9 @@ module.exports = React.createClass({
     return (
       <div>
         <DocumentEditor document={this.state.replica}
-          initialMode='preview'
+          initialMode='edit'
           onSave={this._onSave}
+          isLoading={this.state.isLoading}
           onChange={this._onFormChange} />
       </div>
     );

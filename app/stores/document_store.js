@@ -27,14 +27,21 @@ StateStore.prototype._loadDocument = function(document) {
   this.emitChange();
 };
 
+StateStore.prototype._updateDocument = function(document) {
+  'use strict';
+
+  for (let key in document) {
+    let value = document[key];
+    if (document.hasOwnProperty(key)) { this._document[key] = value; }
+  }
+  this.emitChange();
+};
+
+
 var store = module.exports = new StateStore();
 store.dispatchToken = Dispatcher.register(function(action) {
   switch (action.type) {
-    case 'UPDATE_DOCUMENT':
-      if (action._id === store._document._id) {
-        store._updateDocument(action.id, action.document);
-      }
-      break;
+    case 'UPDATE_DOCUMENT': store._updateDocument(action.document); break;
     case 'LOAD_DOCUMENT': store._loadDocument(action.document); break;
   }
 });

@@ -1,7 +1,7 @@
 var marked = require('marked');
 
-var StateStore = require('../stores/state_store');
 var Actions = require('../actions');
+var LoadingIndicator = require('../components/loading_indicator');
 
 var Tab = React.createClass({
   render: function() {
@@ -19,19 +19,16 @@ module.exports = React.createClass({
     var state = {
       caretPosition: 0,
       mode: this.props.initialMode || 'edit',
-      isLoading: StateStore.getState().isLoading
     };
     return state;
   },
 
   componentDidMount: function() {
     window.addEventListener('keyup', this._onKeyUp);
-    StateStore.addChangeListener(this._onChange);
   },
 
   componentWillUnmount: function() {
     window.removeEventListener('keyup', this._onKeyUp);
-    StateStore.removeChangeListener(this._onChange);
   },
 
   _focusTextArea: function() {
@@ -50,10 +47,6 @@ module.exports = React.createClass({
         React.findDOMNode(self.refs.textarea).selectionStart = self.state.caretPosition;
       }
     });
-  },
-
-  _onChange: function() {
-    this.setState({ isLoading: StateStore.getState().isLoading });
   },
 
   _onKeyUp: function(e) {
@@ -91,15 +84,20 @@ module.exports = React.createClass({
           <input className='form-control' placeholder='Name'
             value={this.props.document._id || ''}
             onChange={this._onTextChange.bind(this, '_id')}
-            disabled={this.state.isLoading} />
+            disabled={this.props.isLoading} />
           <br />
           <textarea ref='textarea' className='form-control' rows='20'
             value={this.props.document.content || ''}
             onChange={this._onTextChange.bind(this, 'content')}
-            disabled={this.state.isLoading} />
+            disabled={this.props.isLoading} />
         </div>
       );
     } else {
+      if (this.props.isLoading) {
+        return (
+          <LoadingIndicator />
+        );
+      }
       return (
         <div>
           <div dangerouslySetInnerHTML={{__html: marked(this.props.document.content || '')}}>

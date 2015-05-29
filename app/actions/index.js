@@ -1,12 +1,12 @@
 var db = require('../database');
 
-function loading(state) {
+var loading = exports.loading = function(state) {
   exports.updateState({ isLoading: state == null ? true : state });
-}
+};
 
-function saving(state) {
+var saving = exports.saving = function(state) {
   exports.updateState({ isSaving: state == null ? true : state });
-}
+};
 
 exports.updateState = function(state) {
   Dispatcher.dispatch({ type: 'UPDATE_STATE', state: state });
@@ -41,13 +41,14 @@ exports.loadDocuments = function() {
 
 exports.loadDocument = function(id) {
   exports.updateState({ isLoading: true });
+  loading();
   db.get(id)
     .then(function(res) {
       Dispatcher.dispatch({ type: 'LOAD_DOCUMENT',
         document: res });
-      exports.updateState({ isLoading: false });
+      loading(false);
     }).catch(function() {
-      exports.updateState({ isLoading: false });
+      loading(false);
     });
 };
 
@@ -67,7 +68,12 @@ exports.updateDocument = function(values) {
       doc._rev = res.rev;
       Dispatcher.dispatch({ type: 'UPDATE_DOCUMENT', document: doc });
       saving(false);
-    }).catch(function() {
+      if (values.hasOwnProperty('_id')) {
+        let router = require('../router');
+        router.transitionTo('edit_document', { id: values._id });
+      }
+    }).catch(function(e) {
+      console.error(e);
       saving(false);
     });
 };

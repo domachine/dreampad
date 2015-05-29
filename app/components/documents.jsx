@@ -3,6 +3,7 @@ var Link = require('react-router').Link;
 var DocumentsStore = require('../stores/documents_store');
 var StateStore = require('../stores/state_store');
 var Actions = require('../actions');
+var LoadingIndicator = require('../components/loading_indicator');
 
 function getState() {
   return {
@@ -47,11 +48,7 @@ module.exports = React.createClass({
 
   render: function() {
     if (this.state.isLoading) {
-      return (
-        <div style={{paddingTop: '50px', textAlign: 'center', width: '100%'}}>
-          <span className='fa fa-spin fa-refresh fa-5x' />
-        </div>
-      );
+      return <LoadingIndicator />
     }
     return (
       <ul className="media-list">
